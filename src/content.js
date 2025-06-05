@@ -31,7 +31,7 @@ async function runFactCheck() {
       });
       chrome.runtime.sendMessage({ command: 'fc-start', total: claims.length, pageUrl: location.href });
     }
-    const { scrapeGoogle } = await import(chrome.runtime.getURL('searchLayer.js'));
+    const { gatherEvidence } = await import(chrome.runtime.getURL('searchLayer.js'));
     const { evaluateClaim } = await import(chrome.runtime.getURL('chatgpt-evaluator.js'));
     for (let i = 0; i < claims.length; i++) {
       const claim = claims[i];
@@ -43,7 +43,7 @@ async function runFactCheck() {
       if (cached) {
         result = cached;
       } else {
-        const evidence = await scrapeGoogle(claim.text);
+        const evidence = await gatherEvidence(claim.text);
         result = await evaluateClaim(claim.text, evidence);
         if (!result.error) {
           await storeVerdict(hash, result);

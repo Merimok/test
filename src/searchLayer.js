@@ -93,3 +93,29 @@ export function parseGoogleHtml(html) {
   });
   return results;
 }
+
+export async function gatherEvidence(query, lang = 'en') {
+  const evidence = [];
+  try {
+    const wiki = await fetchWikiSummary(query, lang);
+    if (wiki.extract) {
+      evidence.push({ text: wiki.extract, url: wiki.content_urls?.desktop?.page });
+    }
+  } catch (e) {}
+  try {
+    const ddg = await searchDuckDuckGo(query);
+    if (ddg.Abstract) {
+      evidence.push({ text: ddg.Abstract, url: ddg.AbstractURL });
+    }
+  } catch (e) {}
+  try {
+    const g = await scrapeGoogle(query, lang);
+    g.slice(0, 3).forEach(r => evidence.push({ text: r.snippet, url: r.url }));
+  } catch (e) {}
+  try {
+    const b = await scrapeBing(query, lang);
+    b.slice(0, 2).forEach(r => evidence.push({ text: r.snippet, url: r.url }));
+  } catch (e) {}
+  return evidence.slice(0, 5);
+}
+
