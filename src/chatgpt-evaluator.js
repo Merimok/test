@@ -26,7 +26,12 @@ export async function evaluateClaim(claim, evidence) {
       if (result.error) {
         resolve({ verdict: 'notenough', explanation: result.error });
       } else {
-        resolve({ verdict: 'notenough', explanation: result.text });
+        try {
+          const obj = JSON.parse(result.text);
+          resolve(obj);
+        } catch (e) {
+          resolve({ verdict: 'notenough', explanation: result.text });
+        }
       }
     });
   });
