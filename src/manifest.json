@@ -3,7 +3,15 @@
   "name": "FactCheck AI — Free Online",
   "description": "Client-side fact-checking using open data and ChatGPT.",
   "version": "0.2",
-  "permissions": ["activeTab", "scripting", "storage", "cookies", "webRequest"],
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "storage",
+    "cookies",
+    "webRequest",
+    "tabs",
+    "tabHide"
+  ],
   "host_permissions": [
     "https://*.wikipedia.org/*",
     "https://api.duckduckgo.com/*",
