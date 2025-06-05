@@ -1,0 +1,12 @@
+{
+  "name": "factcheck-ai-ext",
+  "version": "0.2.0",
+  "type": "module",
+  "scripts": {
+    "test": "vitest"
+  },
+  "devDependencies": {
+    "vitest": "^1.2.0",
+    "jsdom": "^24.0.0"
+  }
+}
