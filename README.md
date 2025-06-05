@@ -1,56 +1,31 @@
 # FactCheck AI
 
-This repository contains the browser extension **FactCheck AI** and its server back-end.
-The project aims to highlight factual claims on web pages and verify them via
-OpenAI and public search engines. See [TECH_SPEC_RU.md](TECH_SPEC_RU.md) for the
-full Russian specification. A basic UI mock is available in
-[DESIGN_RU.md](DESIGN_RU.md).
+This repository contains the browser extension **FactCheck AI – Free Online**.
+The add-on highlights factual claims on web pages and verifies them using only
+open sources and a user’s own ChatGPT session. See
+[TECH_SPEC_RU.md](TECH_SPEC_RU.md) for the full Russian specification. A basic
+UI mock is available in [DESIGN_RU.md](DESIGN_RU.md).
 
 ## Structure
 
 ```
 extension/    # Browser extension (Manifest V3)
-server/       # FastAPI server
 ```
 
 ## Quick start
 
-Create a virtual environment and install the server dependencies:
+Install the Node dependencies and compile the TypeScript sources:
 
 ```bash
-python -m venv .venv
-source .venv/bin/activate
-pip install -r server/requirements.txt
+npm install
+npm run build
 ```
 
-Run the development server:
-
-```bash
-uvicorn server.app:app --reload
-```
-
-Run the tests:
-
-```bash
-pytest
-```
+Load the `extension/` folder as an unpacked extension in your browser. The
+compiled scripts are output to `extension/dist/` and referenced in the manifest.
 
 ## Build the extension
 
-Compile the TypeScript files to JavaScript:
-
-```bash
-tsc
-```
-
-The compiled scripts will appear under `extension/dist/` and are referenced in
+The TypeScript sources are compiled with `npm run build` which runs `tsc` under
+the hood. The compiled scripts appear in `extension/dist/` and are referenced by
 `extension/manifest.json`.
-
-## Configuration
-
-Provide API keys via environment variables:
-
-```bash
-export OPENAI_API_KEY=your_openai_key
-export BRAVE_API_KEY=your_brave_key
-```

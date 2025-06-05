@@ -1,290 +1,116 @@
-Проект: Браузерное расширение «FactCheck AI"
+Проект: Браузерное расширение «FactCheck AI — Free Online»
 
 Версия: 0.1
 Дата: 5 июня 2025
 
 1. Цель проекта
 
-Создать кросс‑браузерное расширение, которое по запросу пользователя (или автоматически) анализирует текст текущей веб‑страницы, выделяет фактические утверждения, проверяет их на достоверность с помощью открытого веб‑поиска и моделей OpenAI и отображает результат всегда на русском языке.
+Разработать кросс‑браузерное расширение, которое выполняет факт‑чекинг в он‑лайн‑режиме, не требуя от пользователя собственных платных API‑ключей. Проверка делается за счёт:
+
+- Публичных открытых источников (Wikipedia/Wikidata REST, DuckDuckGo Instant Answer JSON, MediaWiki API сайтов‑партнёров).
+- Поисковой выдачи (Google, Bing) путём клиентского HTML‑парсинга.
+- Бесплатного доступа к ChatGPT через веб‑интерфейс (DOM‑автоматизация при условии, что пользователь уже вошёл в свой аккаунт).
+
+2. Ключевые принципы
+
+- **Zero‑Server** — расширение не имеет собственного backend‑сервера; все запросы идут напрямую из браузера пользователя.
+- **Zero‑Cost** — используются только бесплатные/неограниченные публичные API или парсинг HTML‑страниц.
+- **Privacy‑by‑design** — текст страницы и результаты не покидают браузер, кроме случаев, когда отправляются в ChatGPT в целях проверки (пользователь предупреждён и соглашается при первом запуске).
+
+3. Технические ограничения
+
+| Параметр | Значение |
+|----------|----------|
+| **Браузеры** | Chrome ≥120 (Manifest V3), Firefox ≥122, Edge ≥120, Opera ≥105 |
+| **Минимальный объём ОЗУ** | 4 ГБ |
+| **Максимальный размер расширения** | < 20 МБ |
+| **Необходимые разрешения** | activeTab, scripting, storage, cookies, webRequest, хост‑доступ к https://*.wikipedia.org/*, https://api.duckduckgo.com/*, https://chat.openai.com/*, https://www.google.com/*, https://www.bing.com/* |
+
+4. Архитектура
+
+```
+┌────────────┐ text ┌───────────────┐ claims ┌─────────────┐ evidence ┌──────────────┐
+│ content.js │────►│ worker-Detect │───────►│ SearchLayer │─────────►│ ChatGPT DOM  │
+└────────────┘     │ (WebWorker)   │        │ (fetch+DOM) │          │  Evaluator   │
+   ▲ UI update     └──────┬─────────┘        └─────────────┘          └────┬─────────┘
+   │                       │ in-memory evidence JSON                          │ verdict
+┌───────┐ React side pane ◄┘                                         ┌──────────────┐
+│  UI   │                                                          │ storage/cache │
+└───────┘                                                          └──────────────┘
+```
+
+- **worker-Detect** — компактная onnx‑модель ClaimDetector (≈ 50 МБ, загружается лениво).
+- **SearchLayer** — модуль, который:
+  - отправляет запрос к DuckDuckGo Instant Answer: `https://api.duckduckgo.com/?q=<query>&format=json` (без ключа).
+  - формирует HTML‑запрос к Google `https://www.google.com/search?q=…&hl=<lang>&num=10` и парсит сниппеты (требуется `&sourceid=chrome` — cookie включено).
+  - делает запрос к REST‑summary Wikipedia: `https://<lang>.wikipedia.org/api/rest_v1/page/summary/<title>`.
+  - собирает первые ≤ 8 абзацев текста (±800 слов) и агрегирует в JSON‑«доказательство».
+- **ChatGPT DOM Evaluator** — background‑script, который:
+  - проверяет, есть ли в домене chat.openai.com активная сессия (cookie `__Secure-next-auth.session-token`).
+  - если нет — всплывающее окно «Войдите в ChatGPT, потом повторите проверку».
+  - если да — открывает (или переиспользует) скрытую вкладку `chrome.tab.hide` (Chrome), вставляет итоговый prompt («Answer in JSON: { verdict, explanation_ru } …») и извлекает ответ из DOM.
+
+5. Алгоритм факт‑чека
+
+1. Извлечение текста — контент‑скрипт собирает page text ≤ 10 000 символов.
+2. Сегментация на предложения (simple Regex).
+3. ClaimDetector (onnx): определяет atomic_claims и confidence.
+4. Для каждого claim:
+   - поиск через SearchLayer (DuckDuckGo → Google → Wikipedia);
+   - сбор evidence (текстовые фрагменты + url + title);
+   - формирование prompt:
+```
+SYSTEM: Ты факт‑чекер, отвечай коротко.
+USER: Утверждение: «…».
+Доказательства:
+1) «фрагмент…» (url)
+2) …
+Дай ответ JSON {verdict: support|refute|notenough, explanation_ru: "…"}.
+```
+   - отправка в ChatGPT DOM Evaluator;
+   - парсинг JSON‑ответа.
+5. Отображение — подсветка строки + боковая панель.
+6. Кэш — IndexedDB по ключу MD5(claim) → verdict на 7 дней.
+
+6. UI‑требования
+
+- Цветовая схема: зелёный — подтверждено, красный — опровергнуто, жёлтый — недостаточно.
+- Popup: кнопка «Проверить страницу» / «Стоп» (progress bar).
+- SidePane (React): таблица Claim | Verdict | Пояснение | Источники; фильтр по статусу.
+- Локализация: RU, EN (по умолчанию RU).
+
+7. Безопасность и соблюдение политик магазинов
+
+- Content‑Security‑Policy — разрешить `https://chat.openai.com` и `https://*.wikipedia.org` во `connect-src`.
+- WebRequest используется только для `onBeforeSendHeaders` → добавление `hl=<lang>` в Google.
+- Cookie access ограничено `https://chat.openai.com/*` (Chrome permission `cookies`).
+- Расширение не хранит и не передаёт персональные данные.
+
+8. Тестирование
+
+| Тип | Инструмент | Цель |
+|-----|------------|------|
+| Unit | vitest | ClaimDetector wrapper, SearchLayer parsers |
+| E2E | Playwright | Полный сценарий «открыть статью Wiki → проверить → ожидаемый verdict» |
+| UX/perf | Lighthouse CI | FCP < 1.2 s, просадка FPS < 5 % |
+
+9. План работ
+
+| Неделя | Задача |
+|-------|---------|
+| 1 | Каркас MV3, UI Popup |
+| 2 | ClaimDetector onnx + WebWorker |
+| 3 | SearchLayer (DuckDuckGo + Wikipedia) |
+| 4 | Google HTML parser, кэш |
+| 5 | ChatGPT DOM Evaluator POC |
+| 6 | Сборка боковой панели, подсветка |
+| 7 | Отладка сессии ChatGPT, повторная авторизация |
+| 8 | Тесты, подготовка к публикации |
 
-2. Область применения
+10. Критерии приёмки
 
-Поддерживаемые браузеры: Chrome (Manifest V3), Firefox (WebExtension), Edge, Opera, Safari ≥ 17 (через Safari Web Extension).
+- Проверка 5 claims на странице Wikipedia проходит ≤ 15 с (при наличии сессии ChatGPT).
+- При отключённом ChatGPT плагин корректно сообщает «войдите».
+- Расширение публикуется в Chrome Web Store без ошибок Review.
 
-Поддерживаемые ОС: Windows 10+, macOS 12+, Linux, ChromeOS.
-
-3. Термины и сокращения
-
-Термин
-
-Описание
-
-Claim
-
-Короткое атомарное утверждение, подлежащее факт‑чеку.
-
-RAG
-
-Retrieval‑Augmented Generation – схема «поиск → LLM‑проверка».
-
-LLM
-
-Large Language Model (OpenAI GPT‑4o).
-
-Evidence
-
-Доказательный фрагмент текста из открытого источника.
-
-4. Функциональные требования
-
-Извлечение текста
-
-Расширение извлекает textContent из DOM за исключением script, style, noscript, скрытых элементов.
-
-Определение языка
-
-Используется fastText lid.176.bin или JS‑порт @mapbox/lingua.
-
-В результате каждому предложению присваивается ISO‑639‑1 код языка.
-
-Выделение утверждений (ClaimDetector)
-
-Вызывается gpt-4o с function‑calling extract_atomic_claims (макс. 128 предложений).
-
-Порог важности — аргумент confidence ≥ 0.5.
-
-Нормализация языка
-
-Если исходный язык ≠ ru, claim сначала переводится на русский через OpenAI (system: "Переведи текст на русский без потери смысла").
-
-В UI хранится пара «оригинал / перевод».
-
-Поиск доказательств
-
-Приоритет: Brave Search API → Wikipedia/Wikidata CirrusSearch → дополнительный запрос на английском, если результатов < 3.
-
-Результаты индексируются в OpenSearch 3.x Vector Engine (cosine-embeddings text-embedding-3-large).
-
-Оценка доказательств
-
-Для каждого claim берутся top‑k (≤ 5) пассов с наибольшим сходством.
-
-gpt-4o классифицирует: support, refute, not_enough.
-
-Генерируется краткое объяснение (1‑3 предложения, рус.) со ссылками URL + title.
-
-Отображение результата
-
-Подсветка claim в тексте (зелёный / красный / жёлтый подцвет).
-
-Боковая панель React: таблица «утверждение → verdict → объяснение → источники».
-
-Всплывающая подсказка при наведении.
-
-Пользовательские сценарии
-
-Клик по кнопке «Проверить страницу».
-
-Выделение текста → контекстное меню «Проверить выделенное».
-
-Автопроверка при загрузке (можно выключить).
-
-Кэш и повторы
-
-MD5(claim + lang) → verdict JSON хранится в IndexedDB 14 дней.
-
-Фоновый скрипт обновляет записи, если им > 30 дней.
-
-Логи и телеметрия
-
-Анонимная статистика (при согласии): кол‑во проверок, доля refute, сред. время.
-
-Отправляется на собственный endpoint https://stats.example.com.
-
-5. Нефункциональные требования
-
-Категория
-
-Требование
-
-Производительность
-
-Проверка ≤ 8 секунд для страницы до 10 000 символов; ≤ 1 сек для выделенных ≤ 500 симв.
-
-Потребление токенов
-
-≤ 8 000 токенов на страницу (soft-limit).
-
-Безопасность
-
-Минимальный набор разрешений (activeTab, storage, scripting, contextMenus).
-
-Конфиденциальность
-
-Текст передаётся на сервер только после явного действия пользователя.
-
-Надёжность
-
-Graceful fallback при ошибке сети — показывать уведомление.
-
-Модульность
-
-Front‑end и Back‑end развёртываются независимо; API версия v1.
-
-Локализация UI
-
-RU (основной), EN.
-
-Код‑стайл
-
-TypeScript 5 + ESLint Airbnb, Prettier.
-
-6. Архитектура
-
-┌─────────┐   Claim list   ┌───────────────┐   Evidence   ┌───────────────┐
-│content  │──────────────►│background SW  │─────────────►│FastAPI server │
-│script   │               │(messaging)    │              │(RAG pipeline) │
-└─────────┘◄──────────────┴───────────────┘◄─────────────┴───────────────┘
-   ▲             ▲                ▲                ▲
-   │ UI updates  │ fetch verdicts │ OpenSearch     │ OpenAI / Brave API
-   │             │                │                │
-┌───────┐  React side panel uses Shadow DOM to avoid CSS collision.
-│  UI   │
-└───────┘
-
-Front‑end: TypeScript 5 + React 18, Vite build, TailwindCSS (Shadow DOM).
-
-Back‑end: Python 3.12, FastAPI, AsyncIO, httpx, OpenSearch‑py, pydantic.
-
-Data: OpenSearch (vector) + Redis (rate-limiter).
-
-CI/CD: GitHub Actions → Docker Hub → deploy to Fly.io.
-
-7. Структура репозитория
-
-/
-├── extension/
-│   ├── manifest.json
-│   ├── background.ts
-│   ├── content.ts
-│   ├── ui/
-│   └── assets/
-├── server/
-│   ├── app.py
-│   ├── services/
-│   │   ├── claim_detector.py
-│   │   ├── search.py
-│   │   └── verdict.py
-│   ├── requirements.txt
-│   └── tests/
-├── .github/
-│   ├── workflows/ci.yml
-│   └── ISSUE_TEMPLATE.md
-├── README.md
-└── LICENSE
-
-8. Внешние зависимости
-
-Сервис
-
-Назначение
-
-Ограничения
-
-OpenAI API (gpt‑4o, embeddings‑3‑large)
-
-Translation, claim‑extract, verdict
-
-Цена / rate‑limit 90k TPM
-
-Brave Search API
-
-Веб‑доказательства
-
-2 000 запросов/мес бесплатно
-
-Wikipedia CirrusSearch
-
-Энциклопедия
-
-200 запр./сут без ключа
-
-fastText lid.176
-
-Lang‑ID
-
-126 МБ
-
-OpenSearch 3.x
-
-Vector cache
-
-Docker-image 1.2 ГБ
-
-9. Тестирование
-
-Юнит‑тесты pytest (coverage ≥ 80 %).
-
-E2E Playwright – сценарии проверки UI.
-
-Набор фактов: 300 записей IFCN (ru/en/es) → Precision, Recall≥0.75.
-
-Перфоманс: Lighthouse CI, Web-Vitals LCP≤2.5 s.
-
-10. План работ (MVP → v1.0)
-
-Неделя
-
-Deliverable
-
-1 – 2
-
-Каркас расширения, README, CI
-
-3 – 4
-
-ClaimDetector MVP, UI Popup
-
-5 – 7
-
-Brave Search, Vector cache
-
-8 – 10
-
-Verdict LLM, пояснения
-
-11 – 12
-
-UX (подсветка, боковая панель)
-
-13
-
-Hardening, политика магазинов
-
-14 – 15
-
-Тестирование, локализация
-
-16
-
-Публикация v1.0
-
-11. Критерии приёмки
-
-Расширение проходит публикацию в Chrome Web Store и AMO без замечаний.
-
-На странице Википедии (≈ 15 000 симв) результат появляется ≤ 8 с.
-
-При повторной проверке того же текста API-запросов к OpenAI нет (сработал кэш).
-
-В 95 % случаев UI отображается без перерисовок (FCP < 1 c).
-
-Тест-корпус Precision ≥ 0.75, Recall ≥ 0.70.
-
-12. Условия поддержки
-
-Код под лицензией MIT, open-source.
-
-Вопросы и баг-репорты через GitHub Issues.
-
-Обновление моделей и зависимостей не реже 1 раза в квартал.
+Этот вариант не требует платных ключей: поиск — DuckDuckGo/Google/Wiki без API, LLM — личный аккаунт ChatGPT пользователя; всё исполняется внутри браузера.
