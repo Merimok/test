@@ -1,7 +1,8 @@
 # FactCheck AI — Free Online
 
-This repository contains a browser extension skeleton for FactCheck AI. It runs entirely client-side using open data sources and a logged-in ChatGPT session to evaluate claims. When a ChatGPT login is required, the extension opens a tab so you can authenticate and then continues processing. Results can be bookmarked, and pages re-checked later.
-
+- `src/worker-detect.js` – WebWorker that lazily loads an ONNX model
+- `src/chatgpt-evaluator.js` – Automates ChatGPT DOM interactions and parses JSON replies
+- `model.onnx` – Placeholder ONNX model loaded by the worker
 ## Structure
 
 - `src/manifest.json` – Extension manifest (MV3)

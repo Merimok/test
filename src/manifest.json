@@ -40,7 +40,7 @@
   ],
   "web_accessible_resources": [
     {
-      "resources": ["sidepanel.html", "sidepanel.js"],
+      "resources": ["sidepanel.html", "sidepanel.js", "model.onnx"],
       "matches": ["<all_urls>"]
     }
   ],
