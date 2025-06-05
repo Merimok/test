@@ -77,6 +77,3 @@ function waitForResponse(timeout = 30000) {
     }, 1000);
   });
 }
-    form?.dispatchEvent(new Event('submit', { bubbles: true }));
-  }
-}

@@ -16,4 +16,18 @@ export async function scrapeGoogle(query, lang = 'en') {
   const res = await fetch(url);
   const html = await res.text();
   // TODO: parse DOM in sandbox, extract snippet text
-  r
+  return parseGoogleHtml(html);
+}
+
+export function parseGoogleHtml(html) {
+  const dom = new DOMParser().parseFromString(html, 'text/html');
+  const results = [];
+  dom.querySelectorAll('.g').forEach(g => {
+    const title = g.querySelector('h3')?.textContent?.trim();
+    const snippet = g.querySelector('.IsZvec')?.textContent?.trim();
+    if (title && snippet) {
+      results.push({ title, snippet });
+    }
+  });
+  return results;
+}
