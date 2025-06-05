@@ -29,7 +29,7 @@ async function runFactCheck() {
         url: chrome.runtime.getURL('sidepanel.html'),
         type: 'popup', width: 600, height: 400
       });
-      chrome.runtime.sendMessage({ command: 'fc-start', total: claims.length });
+      chrome.runtime.sendMessage({ command: 'fc-start', total: claims.length, pageUrl: location.href });
     }
     const { scrapeGoogle } = await import(chrome.runtime.getURL('searchLayer.js'));
     const { evaluateClaim } = await import(chrome.runtime.getURL('chatgpt-evaluator.js'));
@@ -61,6 +61,9 @@ async function runFactCheck() {
 // Example trigger: run when popup sends message
 chrome.runtime.onMessage.addListener((msg) => {
   if (msg.command === 'start-check') {
+    runFactCheck();
+  }
+  if (msg.command === 'recheck-page') {
     runFactCheck();
   }
 });

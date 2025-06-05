@@ -29,6 +29,8 @@ async function ensureChatGPTSession() {
   return { tabId, loginRequired };
 }
 
+let lastScanTabId = null;
+
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (msg.command === 'ensure-chatgpt-session') {
     ensureChatGPTSession().then(sendResponse);
@@ -37,4 +39,24 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (msg.command === 'show-chatgpt') {
     chrome.tabs.update(msg.tabId, { active: true });
   }
+  if (msg.command === 'fc-start') {
+    lastScanTabId = sender.tab?.id || lastScanTabId;
+  }
+  if (msg.command === 'trigger-recheck') {
+    if (lastScanTabId !== null) {
+      chrome.tabs.sendMessage(lastScanTabId, { command: 'recheck-page' });
+    }
+  }
 });
+
+chrome.webRequest.onBeforeRequest.addListener(
+  (details) => {
+    const url = new URL(details.url);
+    if (!url.searchParams.has('hl')) {
+      url.searchParams.set('hl', chrome.i18n.getUILanguage().split('-')[0]);
+      return { redirectUrl: url.toString() };
+    }
+  },
+  { urls: ['https://www.google.com/search*'], types: ['xmlhttprequest'] },
+  ['blocking']
+);
