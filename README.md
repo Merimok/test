@@ -15,3 +15,19 @@ This repository contains a browser extension skeleton for FactCheck AI. It runs 
 - `src/sidepanel.html` + `src/sidepanel.js` – Side panel to display results
 
 This code is incomplete and provided as a starting point for further development.
+
+## Development
+
+Install the dependencies:
+
+```bash
+npm install
+```
+
+Run the test suite:
+
+```bash
+npm test
+```
+
+Tests are also executed automatically for each commit using GitHub Actions.
