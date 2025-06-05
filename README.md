@@ -1,6 +1,6 @@
 # FactCheck AI — Free Online
 
-This repository contains a browser extension skeleton for FactCheck AI. It runs entirely client-side using open data sources and a logged-in ChatGPT session to evaluate claims. When login is required, the extension opens a tab so you can authenticate, then continues processing. Results can be bookmarked and pages re-checked later.
+This repository contains a browser extension skeleton for FactCheck AI. It runs entirely client-side using open data sources and a logged-in ChatGPT session to evaluate claims. When a ChatGPT login is required, the extension opens a tab so you can authenticate and then continues processing. Results can be bookmarked, and pages re-checked later.
 
 ## Structure
 
@@ -22,12 +22,4 @@ Install the dependencies:
 
 ```bash
 npm install
-```
 
-Run the test suite:
-
-```bash
-npm test
-```
-
-Tests are also executed automatically for each commit using GitHub Actions.

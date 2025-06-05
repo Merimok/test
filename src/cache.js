@@ -2,11 +2,13 @@
 const DB_NAME = 'factcheck-cache';
 const STORE = 'verdicts';
 const BOOKMARKS = 'bookmarks';
+const DB_VERSION = 2;
 const EXPIRY_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 
 function openDB() {
   return new Promise((resolve, reject) => {
-    const req = indexedDB.open(DB_NAME, 2);
+    const req = indexedDB.open(DB_NAME, DB_VERSION);
+
     req.onupgradeneeded = () => {
       const db = req.result;
       if (!db.objectStoreNames.contains(STORE)) {
@@ -16,6 +18,7 @@ function openDB() {
         db.createObjectStore(BOOKMARKS, { keyPath: 'url' });
       }
     };
+
     req.onerror = () => reject(req.error);
     req.onsuccess = () => resolve(req.result);
   });

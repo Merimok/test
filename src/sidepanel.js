@@ -8,12 +8,20 @@ const bookmarkBtn = document.getElementById('bookmark');
 const recheckBtn = document.getElementById('recheck');
 
 filterEl.addEventListener('change', filterRows);
-bookmarkBtn.addEventListener('click', () => {
-  if (pageUrl) addBookmark(pageUrl, resultsData);
-});
-recheckBtn.addEventListener('click', () => {
-  chrome.runtime.sendMessage({ command: 'trigger-recheck' });
-});
+
+if (bookmarkBtn) {
+  bookmarkBtn.addEventListener('click', () => {
+    if (pageUrl) {
+      addBookmark(pageUrl, resultsData);
+    }
+  });
+}
+
+if (recheckBtn) {
+  recheckBtn.addEventListener('click', () => {
+    chrome.runtime.sendMessage({ command: 'trigger-recheck' });
+  });
+}
 
 chrome.runtime.onMessage.addListener((msg) => {
   if (msg.command === 'fc-start') {
@@ -37,10 +45,6 @@ function appendResult(result) {
 function filterRows() {
   const val = filterEl.value;
   document.querySelectorAll('#results tbody tr').forEach(tr => {
-    if (val === 'all' || tr.className === val) {
-      tr.style.display = '';
-    } else {
-      tr.style.display = 'none';
-    }
+    tr.style.display = (val === 'all' || tr.className === val) ? '' : 'none';
   });
 }
