@@ -3,14 +3,35 @@ export async function evaluateClaim(claim, evidence) {
   return new Promise((resolve) => {
     chrome.runtime.sendMessage({ command: 'open-chatgpt' }, async (res) => {
       const tabId = res.tabId;
+
+      const [{ result: loginRequired }] = await chrome.scripting.executeScript({
+        target: { tabId },
+        func: checkLoginForm
+      });
+
+      if (loginRequired) {
+        resolve({ error: 'login-required' });
+        return;
+      }
+
       const prompt = buildPrompt(claim, evidence);
       await chrome.scripting.executeScript({
         target: { tabId },
         func: injectPrompt,
         args: [prompt]
       });
-      // TODO: read response from DOM
-      resolve({ verdict: 'notenough', explanation: 'Not implemented' });
+
+      const [{ result }] = await chrome.scripting.executeScript({
+        target: { tabId },
+        func: waitForResponse,
+        args: [30000]
+      });
+
+      if (result.error) {
+        resolve({ verdict: 'notenough', explanation: result.error });
+      } else {
+        resolve({ verdict: 'notenough', explanation: result.text });
+      }
     });
   });
 }
@@ -32,6 +53,30 @@ function injectPrompt(prompt) {
     textarea.value = prompt;
     textarea.dispatchEvent(new Event('input', { bubbles: true }));
     const form = textarea.closest('form');
+    form?.dispatchEvent(new Event('submit', { bubbles: true }));
+  }
+}
+
+function checkLoginForm() {
+  return !!document.querySelector('input[type="password"]');
+}
+
+function waitForResponse(timeout = 30000) {
+  return new Promise(resolve => {
+    const start = Date.now();
+    const interval = setInterval(() => {
+      const messages = document.querySelectorAll('[data-message-author-role="assistant"]');
+      const last = messages[messages.length - 1];
+      if (last && last.textContent.trim()) {
+        clearInterval(interval);
+        resolve({ text: last.textContent.trim() });
+      } else if (Date.now() - start >= timeout) {
+        clearInterval(interval);
+        resolve({ error: 'Timed out waiting for response' });
+      }
+    }, 1000);
+  });
+}
     form?.dispatchEvent(new Event('submit', { bubbles: true }));
   }
 }
