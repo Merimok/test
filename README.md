@@ -11,7 +11,7 @@ This repository contains a browser extension skeleton for FactCheck AI. It runs 
 - `src/cache.js` – IndexedDB storage for verdicts and bookmarks
 - `src/searchLayer.js` – Functions to query DuckDuckGo, Google/Bing, Wikipedia and other open sources
 - `src/chatgpt-evaluator.js` – Automation for ChatGPT DOM interactions
- - `src/popup.html` + `src/popup.js` – Popup UI with progress bar and ChatGPT status
+- `src/popup.html` + `src/popup.js` – Popup UI with progress bar and ChatGPT status
 - `src/sidepanel.html` + `src/sidepanel.js` – Side panel with filterable results table and bookmark/re-check buttons
 
 This code is incomplete and provided as a starting point for further development.
