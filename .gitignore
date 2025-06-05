@@ -1,0 +1,6 @@
+# compiled JavaScript
+extension/dist/
+
+# virtual environments
+.venv/
+__pycache__/

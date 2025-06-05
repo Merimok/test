@@ -8,7 +8,7 @@ chrome.contextMenus.create({
   contexts: ['selection']
 });
 
-chrome.contextMenus.onClicked.addListener((info, tab) => {
+chrome.contextMenus.onClicked.addListener((info: any, tab?: any) => {
   if (info.menuItemId === 'factcheck-selection' && tab?.id) {
     chrome.tabs.sendMessage(tab.id, { type: 'FACTCHECK_SELECTION' });
   }

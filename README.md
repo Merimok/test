@@ -34,3 +34,23 @@ Run the tests:
 ```bash
 pytest
 ```
+
+## Build the extension
+
+Compile the TypeScript files to JavaScript:
+
+```bash
+tsc
+```
+
+The compiled scripts will appear under `extension/dist/` and are referenced in
+`extension/manifest.json`.
+
+## Configuration
+
+Provide API keys via environment variables:
+
+```bash
+export OPENAI_API_KEY=your_openai_key
+export BRAVE_API_KEY=your_brave_key
+```

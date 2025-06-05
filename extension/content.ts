@@ -1,4 +1,4 @@
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+chrome.runtime.onMessage.addListener((message: any, sender: any, sendResponse: any) => {
   if (message.type === 'FACTCHECK_SELECTION') {
     const selection = window.getSelection()?.toString() || '';
     if (selection) {
