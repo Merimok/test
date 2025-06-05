@@ -1,15 +1,11 @@
 // DOM-based interaction with ChatGPT
 export async function evaluateClaim(claim, evidence) {
   return new Promise((resolve) => {
-    chrome.runtime.sendMessage({ command: 'open-chatgpt' }, async (res) => {
-      const tabId = res.tabId;
-
-      const [{ result: loginRequired }] = await chrome.scripting.executeScript({
-        target: { tabId },
-        func: checkLoginForm
-      });
+    chrome.runtime.sendMessage({ command: 'ensure-chatgpt-session' }, async (res) => {
+      const { tabId, loginRequired } = res;
 
       if (loginRequired) {
+        chrome.runtime.sendMessage({ command: 'show-chatgpt', tabId });
         resolve({ error: 'login-required' });
         return;
       }
@@ -30,7 +26,12 @@ export async function evaluateClaim(claim, evidence) {
       if (result.error) {
         resolve({ verdict: 'notenough', explanation: result.error });
       } else {
-        resolve({ verdict: 'notenough', explanation: result.text });
+        try {
+          const obj = JSON.parse(result.text);
+          resolve(obj);
+        } catch (e) {
+          resolve({ verdict: 'notenough', explanation: result.text });
+        }
       }
     });
   });

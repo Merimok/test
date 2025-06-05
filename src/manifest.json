@@ -3,13 +3,32 @@
   "name": "FactCheck AI — Free Online",
   "description": "Client-side fact-checking using open data and ChatGPT.",
   "version": "0.2",
-  "permissions": ["activeTab", "scripting", "storage", "cookies", "webRequest"],
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "storage",
+    "cookies",
+    "webRequest",
+    "webRequestBlocking",
+    "tabs",
+    "tabHide"
+  ],
   "host_permissions": [
     "https://*.wikipedia.org/*",
     "https://api.duckduckgo.com/*",
     "https://chat.openai.com/*",
     "https://www.google.com/*",
-    "https://www.bing.com/*"
+    "https://www.bing.com/*",
+    "https://*.wikidata.org/*",
+    "https://query.wikidata.org/*",
+    "https://dbpedia.org/*",
+    "https://www.politifact.com/*",
+    "https://www.snopes.com/*",
+    "https://api.gdeltproject.org/*",
+    "https://api.crossref.org/*",
+    "https://api.openalex.org/*",
+    "https://web.archive.org/*",
+    "https://webcache.googleusercontent.com/*"
   ],
   "action": { "default_popup": "popup.html" },
   "background": { "service_worker": "background.js" },
@@ -22,11 +41,11 @@
   ],
   "web_accessible_resources": [
     {
-      "resources": ["sidepanel.html", "sidepanel.js"],
+      "resources": ["sidepanel.html", "sidepanel.js", "model.onnx", "ort.all.min.js"],
       "matches": ["<all_urls>"]
     }
   ],
   "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'self'; connect-src 'self' https://*.wikipedia.org https://api.duckduckgo.com https://chat.openai.com https://www.google.com https://www.bing.com"
+    "extension_pages": "script-src 'self'; object-src 'self'; connect-src 'self' https://*.wikipedia.org https://api.duckduckgo.com https://chat.openai.com https://www.google.com https://www.bing.com https://query.wikidata.org https://dbpedia.org https://www.politifact.com https://www.snopes.com https://api.gdeltproject.org https://api.crossref.org https://api.openalex.org https://web.archive.org"
   }
 }
