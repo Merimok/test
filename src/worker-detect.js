@@ -4,7 +4,9 @@ let sessionPromise = null;
 async function loadSession() {
   if (!sessionPromise) {
     sessionPromise = (async () => {
-      const ort = await import('onnxruntime-web');
+      if (typeof ort === 'undefined') {
+        importScripts(chrome.runtime.getURL('ort.all.min.js'));
+      }
       const resp = await fetch(chrome.runtime.getURL('model.onnx'));
       const buffer = await resp.arrayBuffer();
       return await ort.InferenceSession.create(buffer);

@@ -9,6 +9,7 @@
     "storage",
     "cookies",
     "webRequest",
+    "webRequestBlocking",
     "tabs",
     "tabHide"
   ],
@@ -40,7 +41,7 @@
   ],
   "web_accessible_resources": [
     {
-      "resources": ["sidepanel.html", "sidepanel.js", "model.onnx"],
+      "resources": ["sidepanel.html", "sidepanel.js", "model.onnx", "ort.all.min.js"],
       "matches": ["<all_urls>"]
     }
   ],

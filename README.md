@@ -1,6 +1,7 @@
 # FactCheck AI — Free Online
 
 - `src/worker-detect.js` – WebWorker that lazily loads an ONNX model
+- `src/ort.all.min.js` – ONNX Runtime script used by the worker
 - `src/chatgpt-evaluator.js` – Automates ChatGPT DOM interactions and parses JSON replies
 - `model.onnx` – Placeholder ONNX model loaded by the worker
 ## Structure
