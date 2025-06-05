@@ -5,7 +5,11 @@
   "scripts": {
     "test": "vitest"
   },
+  "dependencies": {
+    "onnxruntime-web": "^1.22.0"
+  },
   "devDependencies": {
     "vitest": "^1.2.0",
     "jsdom": "^24.0.0"
   }
+}
