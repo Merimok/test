@@ -15,18 +15,19 @@ export async function scrapeGoogle(query, lang = 'en') {
   const url = `https://www.google.com/search?q=${encodeURIComponent(query)}&hl=${lang}&num=10`;
   const res = await fetch(url);
   const html = await res.text();
-  // TODO: parse DOM in sandbox, extract snippet text
   return parseGoogleHtml(html);
 }
 
 export function parseGoogleHtml(html) {
   const dom = new DOMParser().parseFromString(html, 'text/html');
   const results = [];
-  dom.querySelectorAll('.g').forEach(g => {
-    const title = g.querySelector('h3')?.textContent?.trim();
+  dom.querySelectorAll('div.g').forEach(g => {
+    const a = g.querySelector('.yuRUbf > a');
+    const title = a?.querySelector('h3')?.textContent?.trim();
     const snippet = g.querySelector('.IsZvec')?.textContent?.trim();
-    if (title && snippet) {
-      results.push({ title, snippet });
+    const url = a?.href;
+    if (title && snippet && url) {
+      results.push({ title, snippet, url });
     }
   });
   return results;
