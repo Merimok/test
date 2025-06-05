@@ -1,0 +1,12 @@
+# compiled JavaScript
+extension/dist/
+
+# Node dependencies
+node_modules/
+
+# Node dependencies
+node_modules/
+
+# virtual environments
+.venv/
+__pycache__/
